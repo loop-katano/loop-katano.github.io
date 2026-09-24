@@ -29,8 +29,11 @@ jobs:
         run: npm ci
       - name: Build static site
         run: npm run build:pages
-      - name: Add SPA route fallback
-        run: cp dist/client/index.html dist/client/404.html
+      - name: Normalize Vite entry and add SPA route fallback
+        run: |
+          mv dist/client/app/index.html dist/client/index.html
+          rmdir dist/client/app
+          cp dist/client/index.html dist/client/404.html
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
