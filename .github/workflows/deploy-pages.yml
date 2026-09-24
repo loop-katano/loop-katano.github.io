@@ -53,3 +53,16 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify rendered homepage
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for attempt in {1..10}; do
+            if curl -fsSL "$PAGE_URL" | grep -q "/assets/"; then
+              break
+            fi
+            sleep 5
+          done
+          google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=10000 --dump-dom "$PAGE_URL" > rendered.html
+          grep -q "AI 招聘情报中心" rendered.html
+          grep -q "Football Data Lab" rendered.html
