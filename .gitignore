@@ -7,3 +7,4 @@ site-upload.tar.gz
 .tmp-site-stage/
 *.log
 
+preview-checks/

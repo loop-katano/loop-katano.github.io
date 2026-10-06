@@ -12,6 +12,7 @@ export function SiteHeader({ route }) {
     <button className="wordmark" onClick={() => go('/')} aria-label="返回首页"><span>LH</span><b>LOOPHOW</b></button>
     <nav aria-label="主要导航">
       <button className={route === 'home' ? 'active' : ''} onClick={() => go('/')}>作品集</button>
+      <button className={route === 'map' ? 'active' : ''} onClick={() => go('/projects/meetpoint')}>城市会合点</button>
       <button className={route === 'jobs' ? 'active' : ''} onClick={() => go('/projects/job-intelligence')}>招聘情报</button>
       <button className={route === 'football' ? 'active' : ''} onClick={() => go('/projects/football-analytics')}>足球数据</button>
     </nav>

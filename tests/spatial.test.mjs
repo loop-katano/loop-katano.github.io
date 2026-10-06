@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { haversine, rankPlaces, passNetwork, progressiveActions, eventHeatmap } from '../src/lib/spatial.js';
+import { evaluateRequirements } from '../src/lib/matching.js';
+const map=JSON.parse(readFileSync(new URL('../src/data/xianMap.json',import.meta.url)));
+const fb=JSON.parse(readFileSync(new URL('../src/data/footballSpatial.json',import.meta.url)));
+test('great-circle distance: zero, symmetry and one degree',()=>{assert.equal(haversine({lat:0,lon:0},{lat:0,lon:0}),0);assert.ok(Math.abs(haversine({lat:0,lon:0},{lat:0,lon:1})-111.195)<.01);assert.equal(haversine({lat:34,lon:108},{lat:35,lon:109}),haversine({lat:35,lon:109},{lat:34,lon:108}));});
+test('candidate filters and minimax ranking',()=>{const a={lat:34.2588,lon:108.937},b={lat:34.252,lon:108.948};const r=rankPlaces(map.pois,a,b,'饮品',1.5);assert.ok(r.length>0);assert.ok(r.every(p=>p.category==='饮品'&&p.max<=1.5));assert.ok(r.every((p,i)=>!i||p.max>=r[i-1].max));assert.equal(rankPlaces(map.pois,a,b,'全部',.001).length,0);});
+test('all map points inside declared bounds and traceable',()=>{for(const p of map.pois){assert.ok(p.lon>=map.bounds[0]&&p.lon<=map.bounds[2]&&p.lat>=map.bounds[1]&&p.lat<=map.bounds[3]);assert.ok(p.id&&p.osmType&&p.name)}});
+test('pass network averages and excludes set pieces',()=>{const rows=[{type:'Pass',player:1,recipient:2,start:[10,20],complete:true},{type:'Pass',player:2,recipient:1,start:[30,40],complete:true},{type:'Pass',player:1,recipient:2,start:[20,20],complete:true},{type:'Pass',player:1,recipient:2,start:[110,20],complete:true,setPiece:true}];const n=passNetwork(rows);assert.equal(n.nodes.find(n=>n.id===1).x,15);assert.equal(n.edges[0].count,3)});
+test('progression uses 105/120 conversion and completed open play only',()=>{const base={type:'Pass',complete:true,start:[20,20]};assert.equal(progressiveActions([{...base,end:[32,30]},{...base,end:[30,20]},{...base,end:[40,20],complete:false},{...base,end:[40,20],setPiece:true}]).length,1)});
+test('heat bins clamp field boundaries',()=>{const h=eventHeatmap([{start:[120,80]},{start:[0,0]}]);assert.equal(h[95],1);assert.equal(h[0],1);assert.equal(h.reduce((a,b)=>a+b),2)});
+test('football aggregates reconcile team, period and player totals',()=>{for(const t of [779,771]){const all=fb.aggregates[`${t}:0:0`];assert.equal(all.eventCount,[1,2,3,4].reduce((s,p)=>s+fb.aggregates[`${t}:${p}:0`].eventCount,0));for(const p of [0,1,2,3,4]){const row=fb.aggregates[`${t}:${p}:0`];assert.equal(row.eventCount,row.heat.reduce((a,b)=>a+b));assert.equal(row.passCount+row.carryCount,row.advanceCells.reduce((a,b)=>a+b));assert.equal(row.eventCount,fb.players.filter(x=>x.team===t).reduce((s,x)=>s+fb.aggregates[`${t}:${p}:${x.id}`].eventCount,0));}}assert.equal(fb.events,undefined)});
+test('evidence rules preserve gaps and learning levels',()=>{const r=evaluateRequirements(['Python','SQL','产品经理','模型训练','商务销售']);assert.equal(r.matched.length,1);assert.equal(r.partial.length,3);assert.equal(r.gaps.length,1)});

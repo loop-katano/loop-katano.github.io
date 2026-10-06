@@ -29,10 +29,8 @@ jobs:
         run: npm ci
       - name: Build static site
         run: npm run build:pages
-      - name: Normalize Vite entry and add SPA route fallback
+      - name: Add SPA route fallback
         run: |
-          mv dist/client/app/index.html dist/client/index.html
-          rmdir dist/client/app
           cp dist/client/index.html dist/client/404.html
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -64,5 +62,5 @@ jobs:
             sleep 5
           done
           google-chrome --headless=new --no-sandbox --disable-gpu --virtual-time-budget=10000 --dump-dom "$PAGE_URL" > rendered.html
-          grep -q "AI 招聘情报中心" rendered.html
-          grep -q "Football Data Lab" rendered.html
+          grep -q "招聘情报中心" rendered.html
+          grep -q "足球数据实验室" rendered.html

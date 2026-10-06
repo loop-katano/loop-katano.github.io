@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     outDir: "dist/client",
     rollupOptions: {
-      input: resolve(process.cwd(), "app/index.html"),
+      input: resolve(process.cwd(), "index.html"),
     },
   },
   optimizeDeps: {

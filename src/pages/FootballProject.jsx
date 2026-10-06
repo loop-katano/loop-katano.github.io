@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { leagues, matches, recentFifteen, richMatches, roundFive, roundSix, standings, teams } from '../data/footballData';
+import { FootballSpatial } from '../components/FootballSpatial';
 
 const matchFromPath = () => window.location.pathname.split('/matches/')[1] || null;
 const displayDate = value => value.replace('2026-', '').replace('-', ' 月 ') + ' 日';
@@ -125,9 +126,7 @@ function Formation({ match, data, onPlayer }) {
 }
 
 function ActivityMap({ player }) {
-  const seed = Number(player.id.slice(-4));
-  const points = Array.from({length:18},(_,i)=>({x:15+((seed*(i+3)*17)%70),y:12+((seed*(i+7)*11)%76),r:4+((seed+i*9)%7)}));
-  return <div className="fb-activity-map" style={{backgroundImage:"url('/football/icons/pitch.svg')"}}>{points.map((p,i)=><i key={i} style={{left:`${p.x}%`,top:`${p.y}%`,width:p.r*2,height:p.r*2}}/>)}</div>;
+  return <div className="activity-unavailable">本场暂无可核验的位置事件数据，不生成示意热区。真实空间分析请进入“空间分析”页。</div>;
 }
 
 function ShotMap({ player }) {
@@ -140,7 +139,7 @@ function PlayerDrawer({ player, onClose }) {
   if (!player) return null;
   const metrics = [['评分',player.rating != null ? player.rating.toFixed(2) : '—'],['出场',player.minute ? `${player.minute}' 替补上场` : player.minutes ? `${player.minutes} 分钟` : '未出场'],['进球',player.goals || 0],['助攻',player.assists || 0],['预期进球',player.xg ?? '—'],['预期助攻',player.xa ?? '—'],['射门',player.shots ?? '—'],['触球',player.touches ?? '—'],['成功传球',player.passes ?? '—'],['创造机会',player.chances ?? '—'],['防守动作',player.defactions ?? '—'],['抢断',player.tackles ?? '—'],['拦截',player.interceptions ?? '—'],['解围',player.clearances ?? '—'],['恢复球权',player.recoveries ?? '—'],['赢得对抗',player.duels ?? '—'],['跑动距离',player.distance != null ? `${(player.distance/1000).toFixed(2)} km` : '—'],['最高速度',player.speed != null ? `${player.speed.toFixed(1)} km/h` : '—']];
   const teamLogo = Object.values(teams).find(team=>String(team.id)===String(player.teamId))?.logo;
-  return <div className="fb-drawer-backdrop" onMouseDown={event=>event.target===event.currentTarget&&onClose()}><aside className="fb-player-drawer" role="dialog" aria-modal="true" aria-label={`${player.name} 球员详情`}><button className="fb-close" onClick={onClose}>关闭</button><div className="fb-player-head"><img src={player.image} alt={`${player.name} 头像`} onError={event=>{event.currentTarget.src=teamLogo}}/><div><span>{player.role} · #{player.number}{player.captain ? ' · 队长' : ''}</span><h2>{player.name}</h2><p>{player.teamName}{player.country ? ` · ${player.country}` : ''}</p></div></div><div className="fb-player-metrics">{metrics.map(([label,value])=><p key={label}><b>{value}</b><span>{label}</span></p>)}</div><ShotMap player={player}/><div className="fb-player-section"><span>ACTIVITY</span><h3>活动区域</h3><p>活动区域为阵型与角色示意；评分、传球、攻防与跑动指标来自本场比赛数据。</p></div><ActivityMap player={player}/></aside></div>;
+  return <div className="fb-drawer-backdrop" onMouseDown={event=>event.target===event.currentTarget&&onClose()}><aside className="fb-player-drawer" role="dialog" aria-modal="true" aria-label={`${player.name} 球员详情`}><button className="fb-close" onClick={onClose}>关闭</button><div className="fb-player-head"><img src={player.image} alt={`${player.name} 头像`} onError={event=>{event.currentTarget.src=teamLogo}}/><div><span>{player.role} · #{player.number}{player.captain ? ' · 队长' : ''}</span><h2>{player.name}</h2><p>{player.teamName}{player.country ? ` · ${player.country}` : ''}</p></div></div><div className="fb-player-metrics">{metrics.map(([label,value])=><p key={label}><b>{value}</b><span>{label}</span></p>)}</div><ShotMap player={player}/><div className="fb-player-section"><span>ACTIVITY</span><h3>活动区域</h3><p>此比赛快照未提供球员事件坐标，暂不展示活动热区。空间分析请查看世界杯决赛数据。</p></div><ActivityMap player={player}/></aside></div>;
 }
 
 function BasicDetail({ match, onBack }) {
@@ -157,10 +156,11 @@ function MatchDetail({ match, onBack }) {
 }
 
 export function FootballProject() {
+  const [section,setSection]=useState(matchFromPath()?'league':'spatial');
   const [selectedId,setSelectedId] = useState(matchFromPath());
   useEffect(()=>{const onPop=()=>setSelectedId(matchFromPath());window.addEventListener('popstate',onPop);return()=>window.removeEventListener('popstate',onPop)},[]);
   const selectedMatch = useMemo(()=>matches.find(match=>match.id===selectedId),[selectedId]);
   const openMatch = id => {window.history.pushState({},'',`/projects/football-analytics/matches/${id}`);setSelectedId(id);window.scrollTo({top:90,behavior:'smooth'})};
   const backToHub = () => {window.history.pushState({},'','/projects/football-analytics');setSelectedId(null);window.scrollTo({top:90,behavior:'smooth'})};
-  return <main className="product-page football-page"><section className="product-hero dark container"><div><span className="project-kicker">FOOTBALL DATA</span><h1>Premier League</h1><p>真实赛程的数据统计与可视化</p></div><span className="fb-verified">2026/27 · 第 5 轮</span></section><div className="fb-app container"><section className="fb-main">{selectedMatch?<MatchDetail match={selectedMatch} onBack={backToHub}/>:<MatchCenter onOpen={openMatch}/>}</section></div></main>;
+  return <main className="product-page football-page"><section className="product-hero dark container"><div><span className="project-kicker">03 / FOOTBALL DATA LAB</span><h1>足球数据实验室</h1><p>从比赛结果，看到球在场上如何流动。</p></div><span className="fb-verified">空间事件分析</span></section><div className="container football-section-tabs"><button className={section==='spatial'?'active':''} onClick={()=>setSection('spatial')}>空间分析</button><button className={section==='league'?'active':''} onClick={()=>setSection('league')}>联赛总览与比赛详情</button></div><div className="fb-app container"><section className="fb-main">{section==='spatial'?<FootballSpatial/>:selectedMatch?<MatchDetail match={selectedMatch} onBack={backToHub}/>:<MatchCenter onOpen={openMatch}/>}</section></div><div className="product-footnote container"><p>面向希望理解比赛走势和球员表现的足球用户。空间分析使用2022世界杯决赛事件；联赛模块保留原有2026/27英超数据快照，两者独立，不混算。</p>{section==='league'&&<p>联赛原始来源：<a href="https://www.fotmob.com/leagues/47/overview/premier-league" target="_blank" rel="noreferrer">FotMob</a> · 历史导入数据，非实时更新，当前版本未逐场重新核验。阵型图为阵容示意。</p>}</div></main>;
 }
